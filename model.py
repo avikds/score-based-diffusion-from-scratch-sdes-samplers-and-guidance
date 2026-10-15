@@ -638,3 +638,55 @@ class CondScoreNet(nn.Module):
 
         return score
 
+# Step 23 - train_conditional_score_net
+def train_conditional_score_net(model, mix, noise_fn, n_steps, batch_size, lr, p_uncond):
+    # Initialize Adam and the cosine learning-rate scheduler once.
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=n_steps
+    )
+
+    losses = []
+    model.train()
+
+    for _ in range(n_steps):
+        # Sample clean data and their mixture-component labels.
+        x0, y = sample_mixture(mix, batch_size)
+
+        # Randomly replace labels with the null label for classifier-free guidance.
+        drop_mask = torch.rand(batch_size, device=y.device) < p_uncond
+        y_cond = torch.where(
+            drop_mask,
+            torch.full_like(y, model.n_classes),
+            y
+        )
+
+        # Sample the VP-SDE marginal parameters for each data point.
+        alpha, sigma = noise_fn(batch_size)
+        alpha = torch.as_tensor(alpha, dtype=x0.dtype, device=x0.device).reshape(-1)
+        sigma = torch.as_tensor(sigma, dtype=x0.dtype, device=x0.device).reshape(-1)
+
+        # Perturb the clean data with Gaussian noise.
+        eps = torch.randn_like(x0)
+        alpha_column = alpha.unsqueeze(-1)
+        sigma_column = sigma.unsqueeze(-1)
+        x_t = alpha_column * x0 + sigma_column * eps
+
+        # Predict the noise-conditioned, label-conditioned score.
+        score = model(x_t, sigma, y_cond)
+
+        # Denoising score matching objective.
+        residual = sigma_column * score + eps
+        loss = 0.5 * residual.square().sum(dim=-1).mean()
+
+        # Update network parameters.
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        scheduler.step()
+
+        # Store the loss as a Python float.
+        losses.append(float(loss.item()))
+
+    return losses
+
