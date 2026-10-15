@@ -134,3 +134,40 @@ def dsm_loss(model, x0, sigma, eps, alpha=1.0):
 
     return loss
 
+# Step 6 - ScoreNet
+import torch.nn as nn
+
+class ScoreNet(nn.Module):
+    def __init__(self, hidden=128):
+        super().__init__()
+
+        # Noise-conditioned MLP: input (x1, x2, log(sigma)) -> predicted noise.
+        self.net = nn.Sequential(
+            nn.Linear(3, hidden),
+            nn.SiLU(),
+            nn.Linear(hidden, hidden),
+            nn.SiLU(),
+            nn.Linear(hidden, 2)
+        )
+
+    def forward(self, x, sigma):
+        # Ensure sigma matches the input tensor's dtype and device.
+        sigma = torch.as_tensor(sigma, dtype=x.dtype, device=x.device)
+
+        # Support a scalar noise level or one noise level per sample.
+        if sigma.ndim == 0:
+            sigma = sigma.expand(x.shape[0])
+        else:
+            sigma = sigma.reshape(-1)
+
+        # Encode the noise level and concatenate it with the 2-D input.
+        log_sigma = torch.log(sigma).unsqueeze(-1)
+        features = torch.cat([x, log_sigma], dim=1)
+
+        # Predict the noise-related quantity and convert it to a score.
+        # The score is the network output divided by sigma row-wise.
+        output = self.net(features)
+        score = output / sigma.unsqueeze(-1)
+
+        return score
+

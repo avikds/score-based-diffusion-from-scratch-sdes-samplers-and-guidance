@@ -15,6 +15,7 @@ python scaffold.py
 - [x] **3.** mixture_score
 - [x] **4.** perturbed_mixture
 - [x] **5.** dsm_loss
+- [x] **6.** ScoreNet
 
 ---
 
