@@ -549,3 +549,45 @@ def ddim_sampler(score_fn, x_init, n_steps, beta_min, beta_max, eta, t_min):
 
     return x
 
+# Step 21 - heun_sampler
+def heun_sampler(score_fn, x_init, n_steps, beta_min, beta_max, t_min):
+    # Clone the initial samples so x_init remains unchanged.
+    x = x_init.clone()
+
+    # Create a decreasing time grid from t = 1 to t = t_min.
+    ts = torch.linspace(
+        1.0,
+        t_min,
+        n_steps + 1,
+        dtype=x.dtype,
+        device=x.device
+    )
+
+    for i in range(n_steps):
+        # Current and next time points.
+        t_current = ts[i]
+        t_next = ts[i + 1]
+        dt = t_next - t_current
+
+        # Expand scalar time values to shape (n,) for the score function.
+        t_batch = t_current.expand(x.shape[0])
+        t_next_batch = t_next.expand(x.shape[0])
+
+        # First drift evaluation at the current point and time.
+        d1 = probability_flow_drift(
+            x, t_batch, score_fn, beta_min, beta_max
+        )
+
+        # Euler proposal to the next time point.
+        x_euler = x + dt * d1
+
+        # Second drift evaluation at the proposed point and next time.
+        d2 = probability_flow_drift(
+            x_euler, t_next_batch, score_fn, beta_min, beta_max
+        )
+
+        # Heun's second-order update: average the two drift estimates.
+        x = x + dt * 0.5 * (d1 + d2)
+
+    return x
+
