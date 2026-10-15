@@ -171,3 +171,40 @@ class ScoreNet(nn.Module):
 
         return score
 
+# Step 7 - train_score_net
+def train_score_net(model, mix, noise_fn, n_steps, batch_size, lr):
+    # Initialize the optimizer and learning-rate scheduler once.
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=n_steps
+    )
+
+    losses = []
+    model.train()
+
+    for _ in range(n_steps):
+        # Sample clean data points from the Gaussian mixture.
+        x0, _ = sample_mixture(mix, batch_size)
+
+        # Draw per-sample noise schedules: alpha and sigma, each of shape (n,).
+        alpha, sigma = noise_fn(batch_size)
+
+        # Sample standard Gaussian noise with the same shape as x0.
+        eps = torch.randn_like(x0)
+
+        # Compute the denoising score matching loss.
+        loss = dsm_loss(model, x0, sigma, eps, alpha)
+
+        # Perform one optimization step.
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # Update the learning rate after the optimizer step.
+        scheduler.step()
+
+        # Store each loss as a Python float.
+        losses.append(float(loss.item()))
+
+    return losses
+
