@@ -104,3 +104,33 @@ def perturbed_mixture(mix, sigma, alpha=1.0):
         "weights": weights,
     }
 
+# Step 5 - dsm_loss
+def dsm_loss(model, x0, sigma, eps, alpha=1.0):
+    # Convert sigma to a tensor on the same device and with the same dtype as x0.
+    sigma = torch.as_tensor(sigma, dtype=x0.dtype, device=x0.device)
+
+    # Support either a scalar noise level or one noise level per sample.
+    if sigma.ndim == 0:
+        sigma = sigma.expand(x0.shape[0])
+    else:
+        sigma = sigma.reshape(-1)
+
+    sigma_column = sigma.unsqueeze(-1)
+
+    # Support scalar alpha or a separate alpha value for each sample.
+    alpha = torch.as_tensor(alpha, dtype=x0.dtype, device=x0.device)
+    if alpha.ndim > 0:
+        alpha = alpha.reshape(-1, 1)
+
+    # Construct perturbed samples with per-row scaling.
+    x_t = alpha * x0 + sigma_column * eps
+
+    # Predict scores conditioned on each sample's noise level.
+    score = model(x_t, sigma)
+
+    # Weighted denoising score matching objective.
+    residual = sigma_column * score + eps
+    loss = 0.5 * residual.square().sum(dim=-1).mean()
+
+    return loss
+
