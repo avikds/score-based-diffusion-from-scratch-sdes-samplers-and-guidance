@@ -17,6 +17,7 @@ python scaffold.py
 - [x] **5.** dsm_loss
 - [x] **6.** ScoreNet
 - [x] **7.** train_score_net
+- [x] **8.** geometric_sigmas
 
 ---
 

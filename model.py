@@ -208,3 +208,19 @@ def train_score_net(model, mix, noise_fn, n_steps, batch_size, lr):
 
     return losses
 
+# Step 8 - geometric_sigmas
+def geometric_sigmas(sigma_max, sigma_min, n_levels):
+    # Handle the single-level case explicitly.
+    if n_levels == 1:
+        return torch.tensor([sigma_max], dtype=torch.float32)
+
+    # Generate noise levels equally spaced in logarithmic space,
+    # decreasing from sigma_max to sigma_min.
+    log_sigmas = torch.linspace(
+        math.log(sigma_max),
+        math.log(sigma_min),
+        steps=n_levels
+    )
+
+    return torch.exp(log_sigmas)
+
