@@ -23,6 +23,7 @@ python scaffold.py
 - [x] **11.** gaussian_frechet_distance
 - [x] **12.** frechet_to_mixture
 - [x] **13.** vp_sde_coefficients
+- [x] **14.** vp_marginal
 
 ---
 

@@ -348,3 +348,21 @@ def vp_sde_coefficients(x, t, beta_min, beta_max):
 
     return f, g
 
+# Step 14 - vp_marginal
+def vp_marginal(t, beta_min, beta_max):
+    # Compute the integrated beta schedule:
+    # integral_0^t beta(s) ds = beta_min*t + 0.5*(beta_max-beta_min)*t^2
+    integral_beta = (
+        beta_min * t
+        + 0.5 * (beta_max - beta_min) * t.square()
+    )
+
+    # Mean scaling factor: alpha(t) = exp(-0.5 * integral_0^t beta(s) ds).
+    alpha = torch.exp(-0.5 * integral_beta)
+
+    # Standard deviation: sigma(t) = sqrt(1 - alpha(t)^2).
+    # Clamp against tiny negative values due to floating-point roundoff.
+    sigma = torch.sqrt((1.0 - alpha.square()).clamp_min(0.0))
+
+    return alpha, sigma
+
