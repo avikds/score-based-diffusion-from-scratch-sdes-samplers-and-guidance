@@ -366,3 +366,24 @@ def vp_marginal(t, beta_min, beta_max):
 
     return alpha, sigma
 
+# Step 15 - reverse_sde_predictor
+def reverse_sde_predictor(x, t, dt, score_fn, beta_min, beta_max, z):
+    # Evaluate the forward VP-SDE drift and diffusion coefficients.
+    f, g = vp_sde_coefficients(x, t, beta_min, beta_max)
+
+    # Evaluate the score at the current points and times.
+    score = score_fn(x, t)
+
+    # Reshape diffusion coefficients from (n,) to (n, 1)
+    # for correct broadcasting across the 2-D coordinates.
+    g_column = g.unsqueeze(-1)
+
+    # Euler-Maruyama step for the reverse-time VP-SDE.
+    x_new = (
+        x
+        - (f - g_column.square() * score) * dt
+        + g_column * math.sqrt(dt) * z
+    )
+
+    return x_new
+

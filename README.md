@@ -24,6 +24,7 @@ python scaffold.py
 - [x] **12.** frechet_to_mixture
 - [x] **13.** vp_sde_coefficients
 - [x] **14.** vp_marginal
+- [x] **15.** reverse_sde_predictor
 
 ---
 
