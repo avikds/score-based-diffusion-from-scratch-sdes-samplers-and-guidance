@@ -236,3 +236,34 @@ def langevin_step(x, score, step_size, z):
 
     return x_new
 
+# Step 10 - annealed_langevin
+def annealed_langevin(score_fn, x_init, sigmas, n_steps_each, eps):
+    # Clone the initial points so that x_init remains unchanged.
+    x = x_init.clone()
+
+    # The smallest noise level determines the scaling of the step sizes.
+    sigma_min = float(sigmas[-1])
+
+    # Process noise levels in decreasing order.
+    for sigma_i in sigmas:
+        sigma_value = float(sigma_i)
+
+        # Scale the step size according to Song and Ermon's Algorithm 1.
+        step_size = eps * (sigma_value / sigma_min) ** 2
+
+        # Create a per-sample noise-level tensor.
+        sigma_batch = torch.full(
+            (x.shape[0],),
+            sigma_value,
+            dtype=x.dtype,
+            device=x.device
+        )
+
+        # Perform the prescribed number of Langevin updates at this level.
+        for _ in range(n_steps_each):
+            score = score_fn(x, sigma_batch)
+            z = torch.randn_like(x)
+            x = langevin_step(x, score, step_size, z)
+
+    return x
+

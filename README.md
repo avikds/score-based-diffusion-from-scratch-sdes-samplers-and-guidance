@@ -19,6 +19,7 @@ python scaffold.py
 - [x] **7.** train_score_net
 - [x] **8.** geometric_sigmas
 - [x] **9.** langevin_step
+- [x] **10.** annealed_langevin
 
 ---
 
