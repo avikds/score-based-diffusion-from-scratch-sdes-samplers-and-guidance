@@ -20,6 +20,7 @@ python scaffold.py
 - [x] **8.** geometric_sigmas
 - [x] **9.** langevin_step
 - [x] **10.** annealed_langevin
+- [x] **11.** gaussian_frechet_distance
 
 ---
 

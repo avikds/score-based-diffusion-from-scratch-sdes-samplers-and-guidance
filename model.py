@@ -267,3 +267,40 @@ def annealed_langevin(score_fn, x_init, sigmas, n_steps_each, eps):
 
     return x
 
+# Step 11 - gaussian_frechet_distance
+def gaussian_frechet_distance(mu1, cov1, mu2, cov2):
+    # Compute the squared Euclidean distance between the means.
+    mean_term = (mu1 - mu2).square().sum()
+
+    # Symmetrize covariance matrices to reduce numerical asymmetry.
+    cov1 = 0.5 * (cov1 + cov1.T)
+    cov2 = 0.5 * (cov2 + cov2.T)
+
+    # Compute the symmetric square root of cov1 using eigendecomposition.
+    eigvals1, eigvecs1 = torch.linalg.eigh(cov1)
+    eigvals1 = eigvals1.clamp_min(0.0)
+    sqrt_cov1 = (
+        eigvecs1 * torch.sqrt(eigvals1).unsqueeze(0)
+    ) @ eigvecs1.T
+
+    # Form the symmetric positive-semidefinite matrix
+    # cov1^(1/2) @ cov2 @ cov1^(1/2).
+    middle = sqrt_cov1 @ cov2 @ sqrt_cov1
+    middle = 0.5 * (middle + middle.T)
+
+    # Its eigenvalues give the trace of the matrix square root.
+    eigvals_middle = torch.linalg.eigvalsh(middle)
+    eigvals_middle = eigvals_middle.clamp_min(0.0)
+    trace_sqrt = torch.sqrt(eigvals_middle).sum()
+
+    # Squared Gaussian Frechet (2-Wasserstein) distance.
+    distance = (
+        mean_term
+        + torch.trace(cov1)
+        + torch.trace(cov2)
+        - 2.0 * trace_sqrt
+    )
+
+    # Avoid tiny negative distances caused by floating-point roundoff.
+    return max(float(distance.item()), 0.0)
+
