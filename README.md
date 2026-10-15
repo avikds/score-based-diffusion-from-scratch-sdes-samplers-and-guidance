@@ -26,6 +26,7 @@ python scaffold.py
 - [x] **14.** vp_marginal
 - [x] **15.** reverse_sde_predictor
 - [x] **16.** langevin_corrector
+- [x] **17.** pc_sampler
 
 ---
 

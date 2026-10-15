@@ -401,3 +401,43 @@ def langevin_corrector(x, score, z, snr):
 
     return x_new
 
+# Step 17 - pc_sampler
+def pc_sampler(score_fn, x_init, n_steps, beta_min, beta_max, snr, n_corrector, t_min):
+    # Clone the initial samples so that x_init remains unchanged.
+    x = x_init.clone()
+
+    # Create a decreasing time grid from t = 1 to t = t_min.
+    ts = torch.linspace(
+        1.0,
+        t_min,
+        n_steps + 1,
+        dtype=x.dtype,
+        device=x.device
+    )
+
+    # Predictor-corrector sampling loop.
+    for i in range(n_steps):
+        # Current and next time points.
+        t_current = ts[i]
+        t_next = ts[i + 1]
+        dt = float((t_current - t_next).item())
+
+        # Create a per-sample time tensor of shape (n,).
+        t_batch = t_current.expand(x.shape[0])
+
+        # Predictor: take one reverse-time Euler-Maruyama step.
+        z = torch.randn_like(x)
+        x = reverse_sde_predictor(
+            x, t_batch, dt, score_fn, beta_min, beta_max, z
+        )
+
+        # Corrector: refine the samples at the next time point.
+        t_next_batch = t_next.expand(x.shape[0])
+
+        for _ in range(n_corrector):
+            score = score_fn(x, t_next_batch)
+            z = torch.randn_like(x)
+            x = langevin_corrector(x, score, z, snr)
+
+    return x
+
