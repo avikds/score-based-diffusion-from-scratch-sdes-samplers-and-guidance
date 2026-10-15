@@ -25,6 +25,7 @@ python scaffold.py
 - [x] **13.** vp_sde_coefficients
 - [x] **14.** vp_marginal
 - [x] **15.** reverse_sde_predictor
+- [x] **16.** langevin_corrector
 
 ---
 

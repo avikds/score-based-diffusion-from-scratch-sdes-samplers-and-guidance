@@ -387,3 +387,17 @@ def reverse_sde_predictor(x, t, dt, score_fn, beta_min, beta_max, z):
 
     return x_new
 
+# Step 16 - langevin_corrector
+def langevin_corrector(x, score, z, snr):
+    # Compute the mean per-sample Euclidean norms over the batch.
+    z_norm = torch.linalg.vector_norm(z, dim=1).mean()
+    score_norm = torch.linalg.vector_norm(score, dim=1).mean()
+
+    # Compute the SNR-based step size.
+    eps = 2.0 * (snr * z_norm / score_norm.clamp_min(1e-12)).square()
+
+    # Apply one Langevin corrector update.
+    x_new = x + eps * score + torch.sqrt(2.0 * eps) * z
+
+    return x_new
+
