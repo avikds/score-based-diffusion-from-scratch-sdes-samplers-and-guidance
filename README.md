@@ -21,6 +21,7 @@ python scaffold.py
 - [x] **9.** langevin_step
 - [x] **10.** annealed_langevin
 - [x] **11.** gaussian_frechet_distance
+- [x] **12.** frechet_to_mixture
 
 ---
 

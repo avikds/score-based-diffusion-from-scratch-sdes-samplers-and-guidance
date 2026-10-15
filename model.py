@@ -304,3 +304,32 @@ def gaussian_frechet_distance(mu1, cov1, mu2, cov2):
     # Avoid tiny negative distances caused by floating-point roundoff.
     return max(float(distance.item()), 0.0)
 
+# Step 12 - frechet_to_mixture
+def frechet_to_mixture(x, mix):
+    # Compute the empirical mean and unbiased sample covariance.
+    sample_mean = x.mean(dim=0)
+    sample_cov = torch.cov(x.T)
+
+    means = mix["means"]      # Shape: (K, 2)
+    stds = mix["stds"]        # Shape: (K,)
+    weights = mix["weights"]  # Shape: (K,)
+
+    # Compute the exact mean of the Gaussian mixture.
+    mu = (weights.unsqueeze(-1) * means).sum(dim=0)
+
+    # Compute the exact mixture covariance using the law of total covariance.
+    eye = torch.eye(2, dtype=means.dtype, device=means.device)
+    component_covs = (
+        stds.square()[:, None, None] * eye
+        + means.unsqueeze(-1) @ means.unsqueeze(-2)
+    )
+
+    Sigma = (
+        weights[:, None, None] * component_covs
+    ).sum(dim=0) - mu.unsqueeze(-1) @ mu.unsqueeze(-2)
+
+    # Compare the sample statistics against the exact mixture moments.
+    return gaussian_frechet_distance(
+        sample_mean, sample_cov, mu, Sigma
+    )
+
