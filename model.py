@@ -690,3 +690,18 @@ def train_conditional_score_net(model, mix, noise_fn, n_steps, batch_size, lr, p
 
     return losses
 
+# Step 24 - cfg_score
+def cfg_score(model, x, sigma, y, w):
+    # Create null labels for unconditional score predictions.
+    null = torch.full_like(y, model.n_classes)
+
+    # Evaluate the conditional and unconditional scores.
+    cond_score = model(x, sigma, y)
+    uncond_score = model(x, sigma, null)
+
+    # Combine scores using classifier-free guidance.
+    # w = 0 gives the conditional score; w = -1 gives the unconditional score.
+    guided_score = (1.0 + w) * cond_score - w * uncond_score
+
+    return guided_score
+

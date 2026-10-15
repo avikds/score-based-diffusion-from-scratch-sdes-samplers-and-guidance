@@ -33,6 +33,7 @@ python scaffold.py
 - [x] **21.** heun_sampler
 - [x] **22.** CondScoreNet
 - [x] **23.** train_conditional_score_net
+- [x] **24.** cfg_score
 
 ---
 
