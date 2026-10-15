@@ -705,3 +705,26 @@ def cfg_score(model, x, sigma, y, w):
 
     return guided_score
 
+# Step 25 - classifier_guided_score
+def classifier_guided_score(x, mix_t, y, scale):
+    # Compute the unconditional mixture score at the current noise level.
+    s_mix = mixture_score(x, mix_t)
+
+    means = mix_t["means"]
+    stds = mix_t["stds"]
+
+    # Select the mean and standard deviation of the target component
+    # for each sample in the batch.
+    y = torch.as_tensor(y, dtype=torch.long, device=x.device).reshape(-1)
+    target_means = means[y]
+    target_stds = stds[y].unsqueeze(-1)
+
+    # Compute the score conditioned on the target component.
+    s_y = (target_means - x) / target_stds.square()
+
+    # Apply classifier guidance by interpolating between the mixture
+    # score and the target-component score.
+    guided_score = s_mix + scale * (s_y - s_mix)
+
+    return guided_score
+

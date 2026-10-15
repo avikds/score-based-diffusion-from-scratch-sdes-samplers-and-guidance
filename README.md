@@ -34,6 +34,7 @@ python scaffold.py
 - [x] **22.** CondScoreNet
 - [x] **23.** train_conditional_score_net
 - [x] **24.** cfg_score
+- [x] **25.** classifier_guided_score
 
 ---
 
