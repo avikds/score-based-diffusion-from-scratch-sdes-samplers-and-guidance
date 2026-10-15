@@ -83,3 +83,24 @@ def mixture_score(x, mix):
 
     return score
 
+# Step 4 - perturbed_mixture
+def perturbed_mixture(mix, sigma, alpha=1.0):
+    means = mix["means"]
+    stds = mix["stds"]
+    weights = mix["weights"]
+
+    # Scaling the Gaussian samples by alpha scales their means and standard deviations.
+    new_means = alpha * means
+
+    # Adding independent Gaussian noise increases the variance by sigma^2.
+    # Var(alpha * X + sigma * Z) = alpha^2 * stds^2 + sigma^2.
+    new_stds = torch.sqrt((alpha * stds).square() + sigma**2)
+
+    # Return a new dictionary without modifying the original mixture.
+    # The mixture weights remain unchanged.
+    return {
+        "means": new_means,
+        "stds": new_stds,
+        "weights": weights,
+    }
+
