@@ -224,3 +224,15 @@ def geometric_sigmas(sigma_max, sigma_min, n_levels):
 
     return torch.exp(log_sigmas)
 
+# Step 9 - langevin_step
+def langevin_step(x, score, step_size, z):
+    # Perform one unadjusted Langevin dynamics step.
+    # The score contributes a drift term, while z adds Gaussian noise.
+    x_new = (
+        x
+        + 0.5 * step_size * score
+        + math.sqrt(step_size) * z
+    )
+
+    return x_new
+
