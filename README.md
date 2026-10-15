@@ -31,6 +31,7 @@ python scaffold.py
 - [x] **19.** ode_euler_sampler
 - [x] **20.** ddim_sampler
 - [x] **21.** heun_sampler
+- [x] **22.** CondScoreNet
 
 ---
 

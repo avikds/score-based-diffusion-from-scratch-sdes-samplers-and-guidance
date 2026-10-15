@@ -591,3 +591,50 @@ def heun_sampler(score_fn, x_init, n_steps, beta_min, beta_max, t_min):
 
     return x
 
+# Step 22 - CondScoreNet
+class CondScoreNet(nn.Module):
+    def __init__(self, n_classes, hidden=128, emb_dim=16):
+        super().__init__()
+
+        self.n_classes = n_classes
+
+        # The final embedding index (n_classes) represents the null label.
+        self.embed = nn.Embedding(n_classes + 1, emb_dim)
+
+        # Input features: x (2-D) + log(sigma) + class embedding.
+        self.net = nn.Sequential(
+            nn.Linear(3 + emb_dim, hidden),
+            nn.SiLU(),
+            nn.Linear(hidden, hidden),
+            nn.SiLU(),
+            nn.Linear(hidden, 2)
+        )
+
+    def forward(self, x, sigma, y):
+        # Ensure sigma matches x's dtype and device.
+        sigma = torch.as_tensor(sigma, dtype=x.dtype, device=x.device)
+
+        # Support a scalar noise level or one noise level per sample.
+        if sigma.ndim == 0:
+            sigma = sigma.expand(x.shape[0])
+        else:
+            sigma = sigma.reshape(-1)
+
+        # Ensure labels are integer indices on the correct device.
+        y = torch.as_tensor(y, dtype=torch.long, device=x.device).reshape(-1)
+
+        # Obtain class embeddings; y == n_classes denotes unconditional input.
+        class_emb = self.embed(y)
+
+        # Concatenate coordinates, log noise level, and class embedding.
+        features = torch.cat(
+            [x, torch.log(sigma).unsqueeze(-1), class_emb],
+            dim=1
+        )
+
+        # Predict the noise-related quantity and convert it to a score.
+        output = self.net(features)
+        score = output / sigma.unsqueeze(-1)
+
+        return score
+
