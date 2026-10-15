@@ -11,6 +11,7 @@ python scaffold.py
 ## Steps
 
 - [x] **1.** sample_mixture
+- [x] **2.** mixture_responsibilities
 
 ---
 
