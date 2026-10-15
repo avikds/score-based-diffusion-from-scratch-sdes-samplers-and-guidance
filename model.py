@@ -458,3 +458,33 @@ def probability_flow_drift(x, t, score_fn, beta_min, beta_max):
 
     return drift
 
+# Step 19 - ode_euler_sampler
+def ode_euler_sampler(score_fn, x_init, n_steps, beta_min, beta_max, t_min):
+    # Clone the initial samples so x_init remains unchanged.
+    x = x_init.clone()
+
+    # Create a decreasing time grid from t = 1 to t = t_min.
+    ts = torch.linspace(
+        1.0,
+        t_min,
+        n_steps + 1,
+        dtype=x.dtype,
+        device=x.device
+    )
+
+    # Integrate the probability-flow ODE backward in time using Euler's method.
+    for i in range(n_steps):
+        # Broadcast the current time to one value per sample.
+        t_batch = ts[i].expand(x.shape[0])
+
+        # Evaluate the probability-flow ODE drift.
+        drift = probability_flow_drift(
+            x, t_batch, score_fn, beta_min, beta_max
+        )
+
+        # The time increment is negative because the grid is decreasing.
+        dt = ts[i + 1] - ts[i]
+        x = x + dt * drift
+
+    return x
+

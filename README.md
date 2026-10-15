@@ -28,6 +28,7 @@ python scaffold.py
 - [x] **16.** langevin_corrector
 - [x] **17.** pc_sampler
 - [x] **18.** probability_flow_drift
+- [x] **19.** ode_euler_sampler
 
 ---
 
