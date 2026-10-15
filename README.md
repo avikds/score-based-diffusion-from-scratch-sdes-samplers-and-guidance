@@ -29,6 +29,7 @@ python scaffold.py
 - [x] **17.** pc_sampler
 - [x] **18.** probability_flow_drift
 - [x] **19.** ode_euler_sampler
+- [x] **20.** ddim_sampler
 
 ---
 

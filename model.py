@@ -488,3 +488,64 @@ def ode_euler_sampler(score_fn, x_init, n_steps, beta_min, beta_max, t_min):
 
     return x
 
+# Step 20 - ddim_sampler
+def ddim_sampler(score_fn, x_init, n_steps, beta_min, beta_max, eta, t_min):
+    # Clone the initial samples so x_init remains unchanged.
+    x = x_init.clone()
+    n = x.shape[0]
+
+    # Create a decreasing VP-SDE time grid.
+    ts = torch.linspace(
+        1.0, t_min, n_steps + 1,
+        dtype=x.dtype,
+        device=x.device
+    )
+
+    for i in range(n_steps):
+        # Current and next time points, one per sample.
+        t = ts[i].expand(n)
+        t_next = ts[i + 1].expand(n)
+
+        # Obtain the marginal mean scales and standard deviations.
+        a_t, s_t = vp_marginal(t, beta_min, beta_max)
+        a_n, s_n = vp_marginal(t_next, beta_min, beta_max)
+
+        # Reshape for broadcasting across the two coordinates.
+        a_t_col = a_t.unsqueeze(-1)
+        s_t_col = s_t.unsqueeze(-1)
+        a_n_col = a_n.unsqueeze(-1)
+        s_n_col = s_n.unsqueeze(-1)
+
+        # Estimate the noise from the score.
+        eps_hat = -s_t_col * score_fn(x, t)
+
+        # Estimate the original clean sample.
+        x0_hat = (x - s_t_col * eps_hat) / a_t_col
+
+        # Compute the DDIM stochasticity parameter (eta).
+        sigma_eta = (
+            eta
+            * (s_n / s_t.clamp_min(1e-12))
+            * torch.sqrt(
+                (1.0 - a_t.square() / a_n.square()).clamp_min(0.0)
+            )
+        )
+        sigma_eta_col = sigma_eta.unsqueeze(-1)
+
+        # Compute the remaining noise coefficient.
+        direction_scale = torch.sqrt(
+            (s_n_col.square() - sigma_eta_col.square()).clamp_min(0.0)
+        )
+
+        # Draw fresh Gaussian noise even when eta == 0.
+        z = torch.randn_like(x)
+
+        # DDIM update from t to t_next.
+        x = (
+            a_n_col * x0_hat
+            + direction_scale * eps_hat
+            + sigma_eta_col * z
+        )
+
+    return x
+
