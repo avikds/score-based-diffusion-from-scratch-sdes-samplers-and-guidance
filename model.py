@@ -60,3 +60,26 @@ def mixture_responsibilities(x, mix):
 
     return responsibilities
 
+# Step 3 - mixture_score
+def mixture_score(x, mix):
+    means = mix["means"]  # Shape: (K, 2)
+    stds = mix["stds"]    # Shape: (K,)
+
+    # Compute the posterior probability of each component for every point.
+    # Shape: (n, K)
+    responsibilities = mixture_responsibilities(x, mix)
+
+    # Compute each component's score: (mu_k - x) / std_k^2.
+    # Shape: (n, K, 2)
+    component_scores = (
+        means.unsqueeze(0) - x.unsqueeze(1)
+    ) / stds.square().view(1, -1, 1)
+
+    # Combine component scores using their posterior responsibilities.
+    # Shape: (n, 2)
+    score = (
+        responsibilities.unsqueeze(-1) * component_scores
+    ).sum(dim=1)
+
+    return score
+

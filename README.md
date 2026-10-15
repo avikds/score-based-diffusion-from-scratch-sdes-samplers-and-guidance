@@ -12,6 +12,7 @@ python scaffold.py
 
 - [x] **1.** sample_mixture
 - [x] **2.** mixture_responsibilities
+- [x] **3.** mixture_score
 
 ---
 
