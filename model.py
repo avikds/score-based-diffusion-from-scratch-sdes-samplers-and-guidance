@@ -441,3 +441,20 @@ def pc_sampler(score_fn, x_init, n_steps, beta_min, beta_max, snr, n_corrector, 
 
     return x
 
+# Step 18 - probability_flow_drift
+def probability_flow_drift(x, t, score_fn, beta_min, beta_max):
+    # Compute the VP-SDE drift and diffusion coefficients.
+    f, g = vp_sde_coefficients(x, t, beta_min, beta_max)
+
+    # Evaluate the score at the current samples and time.
+    score = score_fn(x, t)
+
+    # Broadcast g^2 from shape (n,) to (n, 1) across the coordinates.
+    g_squared = g.square().unsqueeze(-1)
+
+    # Probability-flow ODE drift:
+    # dx/dt = f(x, t) - 0.5 * g(t)^2 * score(x, t).
+    drift = f - 0.5 * g_squared * score
+
+    return drift
+
