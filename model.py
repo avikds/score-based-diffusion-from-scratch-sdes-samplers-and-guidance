@@ -728,3 +728,45 @@ def classifier_guided_score(x, mix_t, y, scale):
 
     return guided_score
 
+# Step 26 - guidance_metrics
+def guidance_metrics(x, y, mix):
+    means = mix["means"]
+
+    # Ensure labels are integer indices on the correct device.
+    y = torch.as_tensor(y, dtype=torch.long, device=x.device).reshape(-1)
+
+    # Assign each sample to its most probable mixture component using
+    # the exact Bayes posterior responsibilities.
+    responsibilities = mixture_responsibilities(x, mix)
+    predictions = responsibilities.argmax(dim=1)
+
+    # Fraction of samples assigned to their intended component.
+    accuracy = (predictions == y).float().mean().item()
+
+    radii = []
+    shifts = []
+
+    # Compute the radius and centre shift for each class present in y.
+    for k in torch.unique(y):
+        class_idx = int(k.item())
+        class_samples = x[y == k]
+
+        # Mean position of the generated samples for this class.
+        centre_k = class_samples.mean(dim=0)
+
+        # RMS distance from the class centre, measuring sample spread.
+        squared_distances = (class_samples - centre_k).square().sum(dim=1)
+        radius_k = torch.sqrt(squared_distances.mean())
+
+        # Distance between the generated class centre and its true mean.
+        shift_k = torch.linalg.vector_norm(centre_k - means[class_idx])
+
+        radii.append(radius_k)
+        shifts.append(shift_k)
+
+    # Average equally across the classes represented in y.
+    radius = torch.stack(radii).mean().item()
+    shift = torch.stack(shifts).mean().item()
+
+    return float(accuracy), float(radius), float(shift)
+
