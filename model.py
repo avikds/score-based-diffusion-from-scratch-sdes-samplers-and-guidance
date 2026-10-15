@@ -333,3 +333,18 @@ def frechet_to_mixture(x, mix):
         sample_mean, sample_cov, mu, Sigma
     )
 
+# Step 13 - vp_sde_coefficients
+def vp_sde_coefficients(x, t, beta_min, beta_max):
+    # Linear noise schedule: beta(t) = beta_min + t * (beta_max - beta_min).
+    beta = beta_min + t * (beta_max - beta_min)
+
+    # VP-SDE drift coefficient: f(x, t) = -0.5 * beta(t) * x.
+    # Reshape beta to (n, 1) for broadcasting across the 2-D points.
+    f = -0.5 * beta.unsqueeze(-1) * x
+
+    # VP-SDE diffusion coefficient: g(t) = sqrt(beta(t)).
+    # Shape: (n,).
+    g = torch.sqrt(beta)
+
+    return f, g
+
